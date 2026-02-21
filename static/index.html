@@ -1,0 +1,647 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube RAG Chatbot</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #FF0000;
+            --primary-hover: #CC0000;
+            --bg-color: #0f0f0f;
+            --surface-color: #1f1f1f;
+            --surface-hover: #2a2a2a;
+            --text-color: #ffffff;
+            --text-secondary: #aaaaaa;
+            --text-tertiary: #808080;
+            --accent-color: #3ea6ff;
+            --accent-hover: #2d8fd8;
+            --success-color: #00c853;
+            --error-color: #ff3d00;
+            --border-color: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            height: 92vh;
+            max-height: 900px;
+            background-color: var(--surface-color);
+            border-radius: 16px;
+            display: flex;
+            flex-direction: column;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.6);
+            overflow: hidden;
+            border: 1px solid var(--border-color);
+        }
+
+        /* Header */
+        header {
+            padding: 24px;
+            background: linear-gradient(135deg, rgba(255, 0, 0, 0.1), rgba(62, 166, 255, 0.05));
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .header-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo {
+            width: 40px;
+            height: 40px;
+            background: var(--primary-color);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+        }
+
+        h1 {
+            font-size: 1.4rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+        }
+
+        .status-badge {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background-color: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            font-size: 0.85rem;
+            border: 1px solid var(--border-color);
+        }
+
+        .status-indicator {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background-color: var(--text-tertiary);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .status-indicator.loading {
+            background-color: var(--accent-color);
+        }
+
+        .status-indicator.ready {
+            background-color: var(--success-color);
+            animation: none;
+        }
+
+        .status-indicator.error {
+            background-color: var(--error-color);
+            animation: none;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        #video-status {
+            font-weight: 600;
+            color: var(--accent-color);
+            font-family: 'Monaco', 'Courier New', monospace;
+        }
+
+        /* Chat Area */
+        .chat-area {
+            flex: 1;
+            padding: 24px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+            scroll-behavior: smooth;
+        }
+
+        .message {
+            max-width: 80%;
+            padding: 14px 18px;
+            border-radius: 16px;
+            line-height: 1.6;
+            position: relative;
+            animation: slideIn 0.3s ease;
+            font-size: 0.95rem;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(15px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .message.user {
+            align-self: flex-end;
+            background: linear-gradient(135deg, #2d5f8e, #1a3a5c);
+            color: #fff;
+            border-bottom-right-radius: 4px;
+            box-shadow: 0 2px 8px rgba(45, 95, 142, 0.3);
+        }
+
+        .message.bot {
+            align-self: flex-start;
+            background-color: rgba(255, 255, 255, 0.08);
+            border: 1px solid var(--border-color);
+            border-bottom-left-radius: 4px;
+        }
+
+        .message.system {
+            align-self: center;
+            background-color: rgba(62, 166, 255, 0.1);
+            border: 1px solid rgba(62, 166, 255, 0.2);
+            max-width: 90%;
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--accent-color);
+        }
+
+        .message.error {
+            align-self: center;
+            background-color: rgba(255, 61, 0, 0.1);
+            border: 1px solid rgba(255, 61, 0, 0.3);
+            max-width: 90%;
+            text-align: center;
+            color: var(--error-color);
+        }
+
+        .typing-indicator {
+            display: flex;
+            gap: 6px;
+            padding: 18px;
+        }
+
+        .typing-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--text-secondary);
+            border-radius: 50%;
+            animation: typing 1.4s infinite;
+        }
+
+        .typing-dot:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing-dot:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0%, 60%, 100% {
+                transform: translateY(0);
+                opacity: 0.7;
+            }
+            30% {
+                transform: translateY(-10px);
+                opacity: 1;
+            }
+        }
+
+        /* Input Area */
+        .input-area {
+            padding: 20px 24px;
+            border-top: 1px solid var(--border-color);
+            background-color: var(--surface-color);
+            display: flex;
+            gap: 12px;
+            align-items: center;
+            flex-shrink: 0;
+        }
+
+        .input-wrapper {
+            flex: 1;
+            position: relative;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 14px 20px;
+            padding-right: 50px;
+            border-radius: 28px;
+            border: 2px solid var(--border-color);
+            background-color: rgba(255, 255, 255, 0.05);
+            color: var(--text-color);
+            outline: none;
+            font-size: 0.95rem;
+            font-family: inherit;
+            transition: all 0.2s ease;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--accent-color);
+            background-color: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 0 4px rgba(62, 166, 255, 0.1);
+        }
+
+        input[type="text"]::placeholder {
+            color: var(--text-tertiary);
+        }
+
+        input[type="text"]:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .char-count {
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.75rem;
+            color: var(--text-tertiary);
+            pointer-events: none;
+        }
+
+        button {
+            background: linear-gradient(135deg, var(--accent-color), var(--accent-hover));
+            color: white;
+            border: none;
+            padding: 14px 28px;
+            border-radius: 28px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-family: inherit;
+            box-shadow: 0 2px 8px rgba(62, 166, 255, 0.3);
+        }
+
+        button:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(62, 166, 255, 0.4);
+        }
+
+        button:active:not(:disabled) {
+            transform: translateY(0);
+        }
+        
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .send-icon {
+            width: 18px;
+            height: 18px;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 5px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.25);
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .container {
+                height: 100vh;
+                max-height: none;
+                border-radius: 0;
+            }
+
+            header {
+                flex-direction: column;
+                gap: 12px;
+                align-items: flex-start;
+            }
+
+            .message {
+                max-width: 90%;
+            }
+
+            button {
+                padding: 14px 20px;
+            }
+        }
+
+        /* Empty state */
+        .empty-state {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 16px;
+            padding: 40px;
+            text-align: center;
+            color: var(--text-secondary);
+        }
+
+        .empty-state-icon {
+            font-size: 48px;
+            opacity: 0.5;
+        }
+
+        .empty-state-text {
+            font-size: 1.1rem;
+            font-weight: 500;
+        }
+
+        .empty-state-subtext {
+            font-size: 0.9rem;
+            color: var(--text-tertiary);
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <header>
+        <div class="header-left">
+            <div class="logo">▶</div>
+            <h1>YouTube RAG Chatbot</h1>
+        </div>
+        <div class="status-badge">
+            <div class="status-indicator" id="status-indicator"></div>
+            <span id="video-status">Waiting for video...</span>
+        </div>
+    </header>
+
+    <div class="chat-area" id="chat-area">
+        <div class="empty-state">
+            <div class="empty-state-icon">🎬</div>
+            <div class="empty-state-text">Waiting for YouTube video</div>
+            <div class="empty-state-subtext">
+                Please make sure the Chrome extension is active and you're watching a YouTube video
+            </div>
+        </div>
+    </div>
+
+    <div class="input-area">
+        <div class="input-wrapper">
+            <input 
+                type="text" 
+                id="user-input" 
+                placeholder="Ask a question about the video..." 
+                maxlength="1000"
+                disabled
+            >
+            <span class="char-count" id="char-count">0/1000</span>
+        </div>
+        <button id="send-btn" disabled>
+            <svg class="send-icon" fill="currentColor" viewBox="0 0 24 24">
+                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/>
+            </svg>
+            Send
+        </button>
+    </div>
+</div>
+
+<script>
+    // DOM elements
+    const chatArea = document.getElementById('chat-area');
+    const userInput = document.getElementById('user-input');
+    const sendBtn = document.getElementById('send-btn');
+    const videoStatus = document.getElementById('video-status');
+    const statusIndicator = document.getElementById('status-indicator');
+    const charCount = document.getElementById('char-count');
+    
+    // State
+    let currentVideoId = null;
+    let isInitializing = false;
+    let isProcessing = false;
+    let hasShownWelcome = false;
+
+    // Helper functions
+    function setStatus(status, text) {
+        statusIndicator.className = 'status-indicator ' + status;
+        videoStatus.textContent = text;
+    }
+
+    function clearEmptyState() {
+        const emptyState = chatArea.querySelector('.empty-state');
+        if (emptyState) {
+            emptyState.remove();
+        }
+    }
+
+    function addMessage(text, sender) {
+        clearEmptyState();
+        
+        const div = document.createElement('div');
+        div.classList.add('message', sender);
+        div.textContent = text;
+        chatArea.appendChild(div);
+        chatArea.scrollTop = chatArea.scrollHeight;
+    }
+
+    function addTypingIndicator() {
+        clearEmptyState();
+        
+        const div = document.createElement('div');
+        div.classList.add('message', 'bot');
+        div.id = 'typing-indicator';
+        div.innerHTML = `
+            <div class="typing-indicator">
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+                <div class="typing-dot"></div>
+            </div>
+        `;
+        chatArea.appendChild(div);
+        chatArea.scrollTop = chatArea.scrollHeight;
+    }
+
+    function removeTypingIndicator() {
+        const indicator = document.getElementById('typing-indicator');
+        if (indicator) {
+            indicator.remove();
+        }
+    }
+
+    function enableInput() {
+        userInput.disabled = false;
+        sendBtn.disabled = false;
+        isProcessing = false;
+    }
+
+    function disableInput() {
+        userInput.disabled = true;
+        sendBtn.disabled = true;
+        isProcessing = true;
+    }
+
+    // Character counter
+    userInput.addEventListener('input', () => {
+        const length = userInput.value.length;
+        charCount.textContent = `${length}/1000`;
+        
+        if (length > 900) {
+            charCount.style.color = 'var(--error-color)';
+        } else if (length > 750) {
+            charCount.style.color = 'var(--accent-color)';
+        } else {
+            charCount.style.color = 'var(--text-tertiary)';
+        }
+    });
+
+    // Check for video ID
+    async function checkVideoId() {
+        try {
+            const res = await fetch('/video-id');
+            const data = await res.json();
+            
+            if (data.video_id) {
+                if (currentVideoId !== data.video_id) {
+                    currentVideoId = data.video_id;
+                    
+                    if (data.is_initializing) {
+                        setStatus('loading', 'Loading transcript...');
+                        isInitializing = true;
+                        disableInput();
+                    } else if (data.status === 'loaded') {
+                        setStatus('ready', currentVideoId);
+                        isInitializing = false;
+                        enableInput();
+                        
+                        if (!hasShownWelcome) {
+                            addMessage(
+                                `✅ Video loaded successfully! (ID: ${currentVideoId})\n\nYou can now ask questions about this video's content.`,
+                                'system'
+                            );
+                            hasShownWelcome = true;
+                        }
+                    }
+                }
+            } else {
+                setStatus('', 'Waiting for video...');
+                disableInput();
+            }
+        } catch (e) {
+            console.error("Failed to fetch video ID", e);
+            setStatus('error', 'Connection error');
+        }
+    }
+
+    // Poll for video ID
+    setInterval(checkVideoId, 2000);
+    checkVideoId();
+
+    // Send message
+    async function sendMessage() {
+        const text = userInput.value.trim();
+        if (!text || isProcessing) return;
+
+        addMessage(text, 'user');
+        userInput.value = '';
+        charCount.textContent = '0/1000';
+        charCount.style.color = 'var(--text-tertiary)';
+        
+        disableInput();
+        addTypingIndicator();
+
+        try {
+            const res = await fetch('/ask', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    question: text, 
+                    language: "English"
+                })
+            });
+            
+            removeTypingIndicator();
+            
+            if (!res.ok) {
+                const errorData = await res.json();
+                addMessage(
+                    `❌ Error: ${errorData.detail || 'An error occurred'}`,
+                    'error'
+                );
+                return;
+            }
+            
+            const data = await res.json();
+            
+            if (data.answer) {
+                addMessage(data.answer, 'bot');
+            } else {
+                addMessage('❌ No answer received from server', 'error');
+            }
+
+        } catch (e) {
+            removeTypingIndicator();
+            addMessage(
+                '❌ Network Error: Could not reach the server. Please check your connection.',
+                'error'
+            );
+            console.error('Error:', e);
+        } finally {
+            enableInput();
+            userInput.focus();
+        }
+    }
+
+    // Event listeners
+    sendBtn.addEventListener('click', sendMessage);
+    
+    userInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            sendMessage();
+        }
+    });
+
+    // Focus input when ready
+    setInterval(() => {
+        if (!userInput.disabled && document.activeElement !== userInput) {
+            // Auto-focus only if no other element is focused
+            if (document.activeElement === document.body) {
+                userInput.focus();
+            }
+        }
+    }, 5000);
+</script>
+
+</body>
+</html>

@@ -1,0 +1,23 @@
+# FastAPI
+fastapi
+uvicorn[standard]
+python-multipart
+
+# LangChain ecosystem (modern compatible set)
+langchain
+langchain-community
+langchain-openai
+langchain-text-splitters
+
+# Vector store
+faiss-cpu
+
+# YouTube
+youtube-transcript-api
+
+# Environment
+python-dotenv
+
+# Settings
+pydantic
+pydantic-settings

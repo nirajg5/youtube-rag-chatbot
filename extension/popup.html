@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube RAG Chatbot</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            width: 320px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .container {
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .logo {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        h1 {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 5px;
+        }
+
+        .subtitle {
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+
+        .status-card {
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+        }
+
+        .status-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+        }
+
+        .status-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .status-label {
+            font-size: 0.85rem;
+            opacity: 0.9;
+        }
+
+        .status-value {
+            font-weight: 600;
+            font-size: 0.9rem;
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 6px;
+        }
+
+        .status-indicator.active {
+            background: #4ade80;
+            box-shadow: 0 0 8px #4ade80;
+        }
+
+        .status-indicator.inactive {
+            background: #94a3b8;
+        }
+
+        .button {
+            width: 100%;
+            padding: 12px;
+            background: white;
+            color: #667eea;
+            border: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            margin-top: 12px;
+        }
+
+        .button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .button:active {
+            transform: translateY(0);
+        }
+
+        .info-text {
+            font-size: 0.8rem;
+            text-align: center;
+            opacity: 0.8;
+            margin-top: 12px;
+            line-height: 1.4;
+        }
+
+
+        .video-id {
+            font-family: 'Courier New', monospace;
+            background: rgba(255, 255, 255, 0.2);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 0.85rem;
+        }
+
+        .sync-button {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            color: white;
+            margin-top: 8px;
+        }
+
+        .sync-button:hover {
+            background: rgba(255, 255, 255, 0.1);
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+        <div class="header">
+            <div class="logo">🎬</div>
+            <h1>YouTube RAG Chatbot</h1>
+            <div class="subtitle">Video Analysis Assistant</div>
+        </div>
+
+        <div class="status-card">
+            <div class="status-row">
+                <span class="status-label">Backend Status</span>
+                <span class="status-value">
+                    <span class="status-indicator" id="backend-status"></span>
+                    <span id="backend-text">Checking...</span>
+                </span>
+            </div>
+            <div class="status-row">
+                <span class="status-label">Current Video</span>
+                <span class="status-value" id="video-id">None</span>
+            </div>
+        </div>
+
+        <button class="button" id="open-chatbot">
+            Open Chatbot Interface
+        </button>
+
+        <button class="button sync-button" id="sync-video">
+            🔄 Sync Video ID
+        </button>
+
+        <div class="info-text">
+            Navigate to a YouTube video to automatically detect and analyze its content.
+        </div>
+    </div>
+
+    <script src="popup.js"></script>
+</body>
+
+</html>
